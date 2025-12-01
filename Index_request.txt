@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PYH Product Code Request</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Kanit', 'Inter', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+    }
+    .pyh-gradient {
+      background: linear-gradient(135deg, #10B981, #06B6D4);
+    }
+    .pyh-gradient-text {
+      background: linear-gradient(135deg, #10B981, #06B6D4);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .page {
+      display: none;
+    }
+    /* (เพิ่ม) ป้องกันการคลิกที่ icon ภายในปุ่ม (สำหรับ Event Delegation) */
+    .btn-icon-no-pointer {
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+  <div id="login-page" class="page flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 overflow-hidden">
+      <div class="text-center mb-8">
+        <h1 class="text-5xl font-bold pyh-gradient-text">PYH</h1>
+        <p class="text-gray-500 mt-2">ระบบขอเปิดรหัสสินค้า</p>
+      </div>
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700">ชื่อผู้ใช้</label>
+          <div class="mt-1 relative rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i data-feather="user" class="w-5 h-5 text-gray-400"></i>
+            </div>
+            <input type="text" id="username" name="username"
+              class="focus:ring-cyan-500 focus:border-cyan-500 block w-full pl-10 pr-4 sm:text-sm border-gray-300 rounded-lg h-12"
+              placeholder="เช่น admin หรือ IT">
+          </div>
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+          <div class="mt-1 relative rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i data-feather="lock" class="w-5 h-5 text-gray-400"></i>
+            </div>
+            <input type="password" id="password" name="password"
+              class="focus:ring-cyan-500 focus:border-cyan-500 block w-full pl-10 pr-4 sm:text-sm border-gray-300 rounded-lg h-12"
+              placeholder="••••••••">
+          </div>
+        </div>
+        <div id="login-error-msg" class="text-red-600 text-sm text-center"></div>
+        <div>
+          <button type="submit" id="login-button"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white pyh-gradient hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+            เข้าสู่ระบบ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="main-app" class="page min-h-screen">
+    <header class="bg-white shadow-md sticky top-0 z-50">
+      <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-8">
+            <div class="flex-shrink-0">
+              <span class="text-3xl font-bold pyh-gradient-text">PYH</span>
+            </div>
+            <div class="hidden md:flex space-x-4">
+              <a href="#" id="nav-home"
+                class="nav-link text-gray-700 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium"
+                data-page="home">หน้าหลัก</a>
+              <a href="#" id="nav-history"
+                class="nav-link text-gray-700 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium"
+                data-page="history">ประวัติคำขอ</a>
+              <a href="#" id="nav-settings"
+                class="nav-link text-gray-700 hover:text-cyan-600 px-3 py-2 rounded-md text-sm font-medium admin-only-item"
+                data-page="settings">ตั้งค่า (Admin)</a>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="text-right">
+              <div id="user-info-name" class="text-sm font-medium text-gray-800"></div>
+              <div id="user-info-dept" class="text-xs text-gray-500"></div>
+            </div>
+            <button id="logout-button"
+              class="p-2 rounded-full text-gray-500 hover:text-cyan-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+              <i data-feather="log-out" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+
+      <div id="app-page-home" class="app-page px-4">
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
+          <h2 class="text-2xl font-semibold text-gray-900 mb-6">แบบฟอร์มขอเปิดรหัสสินค้าใหม่</h2>
+          <form id="request-form" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label for="req-date" class="block text-sm font-medium text-gray-700">วันที่ขอเปิดรหัส</label>
+                <input type="date" id="req-date" name="req-date"
+                  class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3">
+              </div>
+              <div>
+                <label for="req-department" class="block text-sm font-medium text-gray-700">แผนก</label>
+                <input type="text" id="req-department" name="req-department" readonly
+                  class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3 bg-gray-100 text-gray-500">
+              </div>
+            </div>
+            <div>
+              <label for="req-product-name" class="block text-sm font-medium text-gray-700">ชื่อสินค้า (ไทย/อังกฤษ)
+                *</label>
+              <input type="text" id="req-product-name" name="req-product-name" required
+                class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              
+              <div>
+                <label for="req-product-type" class="block text-sm font-medium text-gray-700">ประเภทสินค้า *</label>
+                <select id="req-product-type" name="req-product-type" required
+                  class="mt-1 block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm h-11">
+                  </select>
+              </div>
+
+              <div>
+                <label for="req-unit" class="block text-sm font-medium text-gray-700">หน่วยนับ *</label>
+                <select id="req-unit" name="req-unit" required
+                  class="mt-1 block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm h-11">
+                  </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label for="req-requester-name" class="block text-sm font-medium text-gray-700">ชื่อผู้ขอเปิดรหัส
+                  *</label>
+                <input type="text" id="req-requester-name" name="req-requester-name" required
+                  class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3">
+              </div>
+              <div>
+                <label for="req-position" class="block text-sm font-medium text-gray-700">ตำแหน่ง *</label>
+                <input type="text" id="req-position" name="req-position" required
+                  class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">รหัสสินค้า</label>
+              <p class="mt-1 text-gray-500 bg-gray-100 rounded-md h-11 px-3 py-2.5 sm:text-sm">รอดำเนินการ</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">แนบรูปภาพ (ถ้ามี)</label>
+              <input type="file" id="req-image" name="req-image" class="hidden" accept="image/*">
+              <div class="mt-1 flex items-center">
+                <label for="req-image"
+                  class="cursor-pointer rounded-md border-0 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
+                  Choose File
+                </label>
+                <span id="file-name-display" class="ml-3 text-sm text-gray-500">
+                  No file chosen
+                </span>
+              </div>
+              <div class="mt-4">
+                <img id="req-image-preview" src="#" alt="ตัวอย่างรูปภาพ"
+                  class="hidden w-full max-w-xs rounded-lg shadow-md border" />
+              </div>
+            </div>
+            <div class="pt-5 text-right">
+              <button type="submit" id="submit-request-button"
+                class="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-feather="save" class="w-5 h-5 mr-2"></i>
+                บันทึกคำขอ
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="app-page-post-submit" class="app-page text-center px-4 py-16">
+        <div class="bg-white rounded-xl shadow-lg p-8 max-w-lg mx-auto">
+          <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
+            <i data-feather="check" class="w-12 h-12 text-green-600"></i>
+          </div>
+          <h2 class="text-2xl font-semibold text-gray-900 mb-2">บันทึกสำเร็จ!</h2>
+          <p class="text-gray-600 mb-8">คำขอเปิดรหัสสินค้าของคุณถูกส่งเข้าระบบเรียบร้อยแล้ว</p>
+          <div class="flex items-center justify-center space-x-4">
+            <button
+              class="post-submit-nav-btn text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-lg text-sm px-5 py-2.5"
+              data-page="home">
+              <i data-feather="home" class="w-4 h-4 mr-2 inline-block"></i>
+              กลับหน้าหลัก
+            </button>
+            <button
+              class="post-submit-nav-btn text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-5 py-2.5"
+              data-page="history">
+              <i data-feather="list" class="w-4 h-4 mr-2 inline-block"></i>
+              ไปยังหน้าประวัติ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="app-page-history" class="app-page px-4">
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+          <h2 id="history-title" class="text-2xl font-semibold text-gray-900 mb-6">ประวัติคำขอ</h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div id="filter-dept-container" class="manager-plus-item">
+              <label for="filter-dept" class="block text-sm font-medium text-gray-700">แผนก</label>
+              <select id="filter-dept"
+                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm h-11">
+                <option value="all">ดูทั้งหมด</option>
+              </select>
+            </div>
+            <div>
+              <label for="filter-status" class="block text-sm font-medium text-gray-700">สถานะ</label>
+              <select id="filter-status"
+                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm h-11">
+                <option value="all">ดูทั้งหมด</option>
+              </select>
+            </div>
+            <div>
+              <label for="filter-date-start" class="block text-sm font-medium text-gray-700">วันที่ (เริ่มต้น)</label>
+              <input type="date" id="filter-date-start"
+                class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3">
+            </div>
+            <div>
+              <label for="filter-date-end" class="block text-sm font-medium text-gray-700">วันที่ (สิ้นสุด)</label>
+              <input type="date" id="filter-date-end"
+                class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+          <div>
+            <label for="filter-search" class="block text-sm font-medium text-gray-700">ค้นหาชื่อสินค้า</label>
+            <input type="text" id="filter-search"
+              class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3"
+              placeholder="พิมพ์เพื่อค้นหาชื่อ...">
+          </div>
+          <div>
+            <label for="filter-search-code" class="block text-sm font-medium text-gray-700">ค้นหารหัสสินค้า</label>
+            <input type="text" id="filter-search-code"
+              class="mt-1 focus:ring-cyan-500 focus:border-cyan-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md h-11 px-3"
+              placeholder="พิมพ์เพื่อค้นหารหัส...">
+          </div>
+
+        </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่ขอ</th>
+                  <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสินค้า
+                  </th>
+                  <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider manager-plus-item-cell">
+                    แผนก</th>
+                  <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสสินค้า
+                  </th>
+                  <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                  <th scope="col"
+                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body" class="bg-white divide-y divide-gray-200">
+              </tbody>
+            </table>
+            <div id="history-no-data" class="text-center py-12 text-gray-500" style="display: none;">
+              <i data-feather="inbox" class="w-16 h-16 mx-auto mb-4"></i>
+              <p>ไม่พบข้อมูลคำขอ</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="app-page-settings" class="app-page px-4">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-6">ตั้งค่าระบบ (Admin)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">จัดการผู้ใช้งาน</h3>
+            <form id="add-user-form"
+              class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4 p-4 border rounded-lg bg-gray-50">
+              <input type="text" id="new-user-username" placeholder="Username"
+                class="sm:text-sm border-gray-300 rounded-md" required>
+              <input type="password" id="new-user-password" placeholder="Password"
+                class="sm:text-sm border-gray-300 rounded-md" required>
+              <select id="new-user-role" class="sm:text-sm border-gray-300 rounded-md" required>
+                <option value="user">User</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+              <input type="text" id="new-user-dept" placeholder="Department"
+                class="sm:text-sm border-gray-300 rounded-md" required>
+              <button type="submit"
+                class="sm:col-span-1 md:col-span-1 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-md text-sm px-4 py-2 flex items-center justify-center">
+                <i data-feather="plus" class="w-4 h-4 mr-1"></i> เพิ่มผู้ใช้
+              </button>
+            </form>
+            <div class="overflow-y-auto max-h-96">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="settings-user-table-body" class="bg-white divide-y divide-gray-200">
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="md:col-span-1 space-y-6">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">จัดการ "หน่วยนับ"</h3>
+              <form id="setting-unit-form" class="flex gap-2 mb-3">
+                <input type="text" id="new-unit-value" placeholder="เพิ่มหน่วยนับใหม่"
+                  class="flex-grow sm:text-sm border-gray-300 rounded-md" required>
+                <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 rounded-md px-3 py-2">
+                  <i data-feather="plus" class="w-5 h-5"></i>
+                </button>
+              </form>
+              <ul id="settings-unit-list" class="space-y-2 max-h-40 overflow-y-auto">
+              </ul>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">จัดการ "ประเภทสินค้า"</h3>
+              <form id="setting-product-type-form" class="flex gap-2 mb-3">
+                <input type="text" id="new-product-type-value" placeholder="เพิ่มประเภทใหม่"
+                  class="flex-grow sm:text-sm border-gray-300 rounded-md" required>
+                <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 rounded-md px-3 py-2">
+                  <i data-feather="plus" class="w-5 h-5"></i>
+                </button>
+              </form>
+              <ul id="settings-product-type-list" class="space-y-2 max-h-40 overflow-y-auto">
+                </ul>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">จัดการ "สถานะ"</h3>
+              <form id="setting-status-form" class="flex gap-2 mb-3">
+                <input type="text" id="new-status-value" placeholder="เพิ่มสถานะใหม่"
+                  class="flex-grow sm:text-sm border-gray-300 rounded-md" required>
+                <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 rounded-md px-3 py-2">
+                  <i data-feather="plus" class="w-5 h-5"></i>
+                </button>
+              </form>
+              <ul id="settings-status-list" class="space-y-2 max-h-40 overflow-y-auto">
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="request-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black bg-opacity-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <form id="modal-form">
+        <div class="p-6 md:p-8">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900">รายละเอียดคำขอ</h2>
+            <button type="button" id="modal-close-button" class="text-gray-400 hover:text-gray-600">
+              <i data-feather="x" class="w-6 h-6"></i>
+            </button>
+          </div>
+          <div class="space-y-5">
+            <input type="hidden" id="modal-request-id">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label for="modal-date" class="block text-sm font-medium text-gray-700">วันที่ขอเปิดรหัส</label>
+                <input type="date" id="modal-date" class="modal-field mt-1 w-full border-gray-300 rounded-md h-11 px-3">
+              </div>
+              <div>
+                <label for="modal-department" class="block text-sm font-medium text-gray-700">แผนก</label>
+                <input type="text" id="modal-department" readonly
+                  class="modal-field mt-1 w-full border-gray-300 rounded-md h-11 px-3 bg-gray-100 text-gray-500">
+              </div>
+            </div>
+            <div>
+              <label for="modal-product-name" class="block text-sm font-medium text-gray-700">ชื่อสินค้า
+                (ไทย/อังกฤษ)</label>
+              <input type="text" id="modal-product-name"
+                class="modal-field mt-1 w-full border-gray-300 rounded-md h-11 px-3">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              
+              <div>
+                <label for="modal-product-type" class="block text-sm font-medium text-gray-700">ประเภทสินค้า</label>
+                <select id="modal-product-type"
+                  class="modal-field mt-1 block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm h-11">
+                  </select>
+              </div>
+
+              <div>
+                <label for="modal-unit" class="block text-sm font-medium text-gray-700">หน่วยนับ</label>
+                <select id="modal-unit"
+                  class="modal-field mt-1 block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm h-11">
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label for="modal-requester-name"
+                  class="block text-sm font-medium text-gray-700">ชื่อผู้ขอเปิดรหัส</label>
+                <input type="text" id="modal-requester-name"
+                  class="modal-field mt-1 w-full border-gray-300 rounded-md h-11 px-3">
+              </div>
+              <div>
+                <label for="modal-position" class="block text-sm font-medium text-gray-700">ตำแหน่ง</label>
+                <input type="text" id="modal-position"
+                  class="modal-field mt-1 w-full border-gray-300 rounded-md h-11 px-3">
+              </div>
+            </div>
+            <div id="modal-image-container" class="space-y-2 hidden">
+              <label class="block text-sm font-medium text-gray-700">รูปภาพที่แนบ</label>
+              <div>
+                <a id="modal-image-link" href="#" target="_blank" rel="noopener noreferrer">
+                  <img id="modal-image-preview" src="#"
+                    class="max-w-xs w-full rounded-lg shadow-md border hover:opacity-90 transition-opacity"
+                    alt="รูปภาพที่แนบ">
+                </a>
+                <a id="modal-image-link-text" href="#" target="_blank" rel="noopener noreferrer"
+                  class="mt-2 inline-block text-sm text-cyan-600 hover:text-cyan-800">
+                  <i data-feather="external-link" class="w-4 h-4 mr-1 inline-block -mt-1"></i>
+                  เปิดรูปภาพในแท็บใหม่
+                </a>
+              </div>
+            </div>
+            <div id="modal-image-upload-container" class="space-y-2 hidden pt-4 border-t border-gray-200">
+              <label class="block text-sm font-medium text-gray-700">
+                เปลี่ยนรูปภาพ (ถ้าต้องการ)
+              </label>
+              <input type="file" id="modal-image-upload" name="modal-image-upload" class="hidden" accept="image/*">
+              <div class="mt-1 flex items-center">
+                <label for="modal-image-upload"
+                  class="cursor-pointer rounded-md border-0 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-100">
+                  Choose New File
+                </label>
+                <span id="modal-file-name-display" class="ml-3 text-sm text-gray-500">
+                  No new file chosen
+                </span>
+              </div>
+              <div class="mt-4">
+                <img id="modal-image-upload-preview" src="#" alt="ตัวอย่างรูปภาพใหม่"
+                  class="hidden w-full max-w-xs rounded-lg shadow-md border" />
+              </div>
+            </div>
+            <div class="space-y-5 pt-5 border-t border-gray-200 manager-plus-item">
+              <h3 class="text-lg font-medium text-gray-900">ส่วนของ Admin</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label for="modal-product-code" class="block text-sm font-medium text-gray-700">รหัสสินค้า</label>
+                  <input type="text" id="modal-product-code"
+                    class="modal-field admin-field mt-1 w-full border-gray-300 rounded-md h-11 px-3">
+                </div>
+                <div>
+                  <label for="modal-status" class="block text-sm font-medium text-gray-700">สถานะ</label>
+                  <select id="modal-status"
+                    class="modal-field admin-field mt-1 block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm h-11">
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label for="modal-admin-notes" class="block text-sm font-medium text-gray-700">หมายเหตุ (Admin)</label>
+                <textarea id="modal-admin-notes" rows="3"
+                  class="modal-field admin-field mt-1 w-full border-gray-300 rounded-md px-3 py-2"></textarea>
+              </div>
+            </div>
+            <div id="modal-readonly-details" class_="space-y-2 text-sm">
+              <h3 class="text-lg font-medium text-gray-900 pt-5 border-t border-gray-200">ข้อมูลเพิ่มเติม</h3>
+              <p><strong>ID คำขอ:</strong> <span id="detail-request-id"></span></p>
+              <p><strong>ผู้สร้างคำขอ:</strong> <span id="detail-created-by"></span></p>
+              <p><strong>เวลาที่สร้าง:</strong> <span id="detail-timestamp"></span></p>
+              <p><strong>เวลาอัปเดตสถานะ:</strong> <span id="detail-status-timestamp"></span></p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+          <button type="button"
+            class="modal-close-btn bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+            ปิด
+          </button>
+          <button type="submit" id="modal-save-button"
+            class="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+            <i data-feather="save" class="w-5 h-5 mr-2 inline-block"></i>
+            บันทึกการเปลี่ยนแปลง
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="user-edit-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black bg-opacity-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+      <form id="user-edit-form">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900">แก้ไขผู้ใช้งาน</h2>
+            <button type="button" id="user-edit-modal-close" class="text-gray-400 hover:text-gray-600">
+              <i data-feather="x" class="w-6 h-6"></i>
+            </button>
+          </div>
+          <div class="space-y-4">
+            <input type="hidden" id="edit-user-original-username">
+            <div>
+              <label for="edit-user-username" class="block text-sm font-medium text-gray-700">Username</label>
+              <input type="text" id="edit-user-username" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+            </div>
+            <div>
+              <label for="edit-user-password" class="block text-sm font-medium text-gray-700">รหัสผ่านใหม่</label>
+              <input type="password" id="edit-user-password" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน">
+            </div>
+            <div>
+              <label for="edit-user-role" class="block text-sm font-medium text-gray-700">Role</label>
+              <select id="edit-user-role" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+                <option value="user">User</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label for="edit-user-dept" class="block text-sm font-medium text-gray-700">Department</label>
+              <input type="text" id="edit-user-dept" class="mt-1 w-full border-gray-300 rounded-md shadow-sm" required>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+          <button type="button" class="user-edit-modal-close bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+            ยกเลิก
+          </button>
+          <button type="submit" id="user-edit-save-button"
+            class="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+            <i data-feather="save" class="w-5 h-5 mr-2 inline-block"></i>
+            บันทึกการเปลี่ยนแปลง
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <script>
+
+    // ==========================================
+    // 🔴 ตั้งค่า API (Product Request)
+    // ==========================================
+    const SCRIPT_URL = "https://script.google.com/macros/s/......./exec"; // 👈 เอา URL ที่ได้จากข้อ 1.1 มาใส่
+
+    // สร้าง object google.script.run ปลอม เพื่อให้โค้ดเดิมทำงานได้โดยไม่ต้องรื้อเยอะ
+    const google = {
+      script: {
+        run: {
+          withSuccessHandler: function(onSuccess) {
+            this._onSuccess = onSuccess;
+            return this;
+          },
+          withFailureHandler: function(onFailure) {
+            this._onFailure = onFailure;
+            return this;
+          },
+          // ฟังก์ชันจำลองการส่งข้อมูล
+          _call: function(fnName, args) {
+            fetch(SCRIPT_URL, {
+              method: 'POST',
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ action: fnName, args: args })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if(this._onSuccess) this._onSuccess(data);
+            })
+            .catch(err => {
+              console.error("API Error:", err);
+              if(this._onFailure) this._onFailure(err);
+            });
+          },
+          // Mapping ชื่อฟังก์ชันเดิม ให้ยิงไปที่ _call
+          checkLogin: function(...args) { this._call('checkLogin', args); },
+          getInitialData: function(...args) { this._call('getInitialData', args); },
+          submitRequest: function(...args) { this._call('submitRequest', args); },
+          updateRequest: function(...args) { this._call('updateRequest', args); },
+          deleteRequest: function(...args) { this._call('deleteRequest', args); },
+          manageUser: function(...args) { this._call('manageUser', args); },
+          updateUser: function(...args) { this._call('updateUser', args); },
+          manageSettings: function(...args) { this._call('manageSettings', args); }
+        }
+      }
+    };
+
+    // ------------------------------------
+    // (1) Application State
+    // ------------------------------------
+    const STATE = {
+      loggedInUser: null,
+      isSuperAdmin: false,
+      isPrivilegedUser: false,
+      currentPage: 'login',
+      requests: [],
+      users: [],
+      settings: {
+        units: [],
+        statuses: [],
+        productTypes: [] // (เพิ่ม)
+      },
+      departments: [],
+      currentModalRequest: null,
+    };
+
+    // ------------------------------------
+    // (2) DOM Element Selectors
+    // ------------------------------------
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => document.querySelectorAll(selector);
+
+    const PAGES = {
+      login: $('#login-page'),
+      main: $('#main-app'),
+      home: $('#app-page-home'),
+      postSubmit: $('#app-page-post-submit'),
+      history: $('#app-page-history'),
+      settings: $('#app-page-settings'),
+    };
+
+    const MODALS = {
+      request: $('#request-modal'),
+      userEdit: $('#user-edit-modal') // (เพิ่ม)
+    };
+
+    // ------------------------------------
+    // (3) Utility Functions
+    // ------------------------------------
+    function showLoading(title = 'กำลังโหลด...') {
+      Swal.fire({ title: title, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    }
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+      });
+    }
+    function hideLoading() { Swal.close(); }
+    function showError(message) { Swal.fire('เกิดข้อผิดพลาด', message, 'error'); }
+    function showSuccess(message) { Swal.fire('สำเร็จ!', message, 'success'); }
+    function handleGASFailure(error) { hideLoading(); showError(error.message || error); }
+    function formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      let month = '' + (d.getMonth() + 1);
+      let day = '' + d.getDate();
+      const year = d.getFullYear();
+      if (month.length < 2) month = '0' + month;
+      if (day.length < 2) day = '0' + day;
+      return [year, month, day].join('-');
+    }
+    function getDriveIdFromUrl(url) {
+      if (!url) return null;
+      const match = url.match(/drive.google.com\/file\/d\/([\w-]+)/);
+      if (match && match[1]) { return match[1]; }
+      const match2 = url.match(/drive.google.com\/uc\?id=([\w-]+)/);
+      if (match2 && match2[1]) { return match2[1]; }
+      return null;
+    }
+    function formatDateTime(date) {
+      if (!date) return 'N/A';
+      try {
+        return new Date(date).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short', hour12: false });
+      } catch (e) { return date; }
+    }
+
+    // ------------------------------------
+    // (4) Page Navigation
+    // ------------------------------------
+    function navigateTo(pageKey) {
+      if (STATE.loggedInUser && STATE.loggedInUser.role === 'user' && pageKey === 'settings') {
+        navigateTo('home');
+        return;
+      }
+      STATE.currentPage = pageKey;
+      if (pageKey !== 'login' && pageKey !== 'post-submit' && STATE.loggedInUser) {
+        sessionStorage.setItem('pyh_last_page', pageKey);
+      }
+      Object.values(PAGES).forEach(page => page.style.display = 'none');
+      $$('.app-page').forEach(page => page.style.display = 'none');
+      if (pageKey === 'login') {
+        PAGES.login.style.display = 'flex';
+      } else {
+        PAGES.main.style.display = 'block';
+        if (PAGES[pageKey]) {
+          PAGES[pageKey].style.display = 'block';
+          if (pageKey === 'history') renderHistoryPage();
+          if (pageKey === 'settings') renderSettingsPage();
+        } else {
+          const homePage = STATE.isPrivilegedUser ? 'history' : 'home';
+          navigateTo(homePage);
+          return;
+        }
+      }
+      $$('.nav-link').forEach(link => {
+        link.classList.toggle('text-cyan-600', link.dataset.page === pageKey);
+        link.classList.toggle('font-bold', link.dataset.page === pageKey);
+        link.classList.toggle('text-gray-700', link.dataset.page !== pageKey);
+      });
+      feather.replace();
+    }
+
+    // ------------------------------------
+    // (5) Login / Logout Logic
+    // ------------------------------------
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = $('#username').value.trim();
+      const password = $('#password').value.trim();
+      if (!username || !password) {
+        $('#login-error-msg').textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+        return;
+      }
+      $('#login-error-msg').textContent = '';
+      showLoading('กำลังเข้าสู่ระบบ...');
+      google.script.run
+        .withSuccessHandler(onLoginSuccess)
+        .withFailureHandler(handleGASFailure)
+        .checkLogin(username, password);
+    }
+    function onLoginSuccess(response) {
+      if (response.success) {
+        STATE.loggedInUser = response.user;
+        STATE.isSuperAdmin = STATE.loggedInUser.role === 'admin';
+        STATE.isPrivilegedUser = (STATE.loggedInUser.role === 'admin' || STATE.loggedInUser.role === 'manager');
+        sessionStorage.setItem('pyh_current_user', JSON.stringify(response.user));
+        google.script.run
+          .withSuccessHandler(response => onGetInitialDataSuccess(response, 'first-login'))
+          .withFailureHandler(handleGASFailure)
+          .getInitialData(STATE.loggedInUser);
+      } else {
+        hideLoading();
+        $('#login-error-msg').textContent = response.message;
+      }
+    }
+    function onGetInitialDataSuccess(response, loginType = 'first-login') {
+      if (response.success) {
+        STATE.requests = response.requests || [];
+        STATE.users = response.users || [];
+        // (แก้ไข) รับ productTypes
+        STATE.settings = response.settings || { units: [], statuses: [], productTypes: [] };
+        const depts = new Set((STATE.users || []).map(u => u.department)); // (แก้) ป้องกัน lỗi users undefined
+        STATE.departments = ['all', ...Array.from(depts)];
+        initializeAppUI();
+        if (loginType === 'resume') {
+          if (STATE.currentPage === 'history') renderHistoryPage();
+          if (STATE.currentPage === 'settings') renderSettingsPage();
+        } else {
+          const homePage = STATE.isPrivilegedUser ? 'history' : 'home';
+          navigateTo(homePage);
+        }
+        hideLoading();
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    function handleLogout() {
+      STATE.loggedInUser = null;
+      STATE.requests = [];
+      STATE.users = [];
+      sessionStorage.removeItem('pyh_current_user');
+      sessionStorage.removeItem('pyh_last_page');
+      $('#login-form').reset();
+      navigateTo('login');
+    }
+
+    // ------------------------------------
+    // (6) Application UI Rendering
+    // ------------------------------------
+    function initializeAppUI() {
+      if (!STATE.loggedInUser) return; // (แก้) ป้องกัน lỗi ตอน logout
+      $('#user-info-name').textContent = `สวัสดี, ${STATE.loggedInUser.username}`;
+      $('#user-info-dept').textContent = `แผนก: ${STATE.loggedInUser.department}`;
+      $$('.admin-only-item').forEach(el => { el.style.display = STATE.isSuperAdmin ? '' : 'none'; });
+      $$('.manager-plus-item').forEach(el => { el.style.display = STATE.isPrivilegedUser ? '' : 'none'; });
+      $$('.manager-plus-item-cell').forEach(el => { el.style.display = STATE.isPrivilegedUser ? 'table-cell' : 'none'; });
+      
+      $('#req-department').value = STATE.loggedInUser.department;
+      $('#req-date').value = formatDate(new Date());
+
+      // Populate Units
+      const unitSelect = $('#req-unit');
+      unitSelect.innerHTML = '';
+      (STATE.settings.units || []).forEach(unit => {
+        unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`;
+      });
+
+      // (เพิ่ม) Populate Product Types
+      const typeSelect = $('#req-product-type');
+      typeSelect.innerHTML = '';
+      (STATE.settings.productTypes || []).forEach(type => {
+        typeSelect.innerHTML += `<option value="${type}">${type}</option>`;
+      });
+
+      // Populate Filters
+      const filterDept = $('#filter-dept');
+      filterDept.innerHTML = '';
+      (STATE.departments || []).forEach(dept => {
+        filterDept.innerHTML += `<option value="${dept}">${dept === 'all' ? 'ทุกแผนก' : dept}</option>`;
+      });
+      const filterStatus = $('#filter-status');
+      filterStatus.innerHTML = '<option value="all">ทุกสถานะ</option>';
+      (STATE.settings.statuses || []).forEach(status => {
+        filterStatus.innerHTML += `<option value="${status}">${status}</option>`;
+      });
+    }
+
+    function getStatusBadge(status) {
+      let colorClasses = 'bg-gray-100 text-gray-800';
+      if (status === 'รอดำเนินการ') colorClasses = 'bg-yellow-100 text-yellow-800';
+      else if (status === 'กำลังดำเนินการ') colorClasses = 'bg-blue-100 text-blue-800';
+      else if (status === 'ดำเนินการแล้ว') colorClasses = 'bg-green-100 text-green-800';
+      return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClasses}">${status}</span>`;
+    }
+
+    function renderHistoryPage() {
+      $('#history-title').textContent = STATE.isPrivilegedUser ? 'Dashboard (จัดการคำขอ)' : 'ประวัติคำขอ';
+      const deptFilter = $('#filter-dept').value;
+      const statusFilter = $('#filter-status').value;
+      const dateStartFilter = $('#filter-date-start').value;
+      const dateEndFilter = $('#filter-date-end').value;
+      const searchFilter = $('#filter-search').value.trim().toLowerCase();
+      const searchCodeFilter = $('#filter-search-code').value.trim().toLowerCase();
+      let filteredRequests = (STATE.requests || []).filter(req => {
+        if (STATE.isPrivilegedUser && deptFilter !== 'all' && req.Department !== deptFilter) return false;
+        if (statusFilter !== 'all' && req.Status !== statusFilter) return false;
+        const reqDate = formatDate(req.RequestDate);
+        if (dateStartFilter && reqDate < dateStartFilter) return false;
+        if (dateEndFilter && reqDate > dateEndFilter) return false;
+        if (searchFilter && !req.ProductName.toLowerCase().includes(searchFilter)) return false;
+        const productCode = String(req.ProductCode || '').toLowerCase();
+        if (searchCodeFilter && !productCode.includes(searchCodeFilter)) return false;
+        return true;
+      });
+      if (STATE.isPrivilegedUser) filteredRequests.sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
+      else filteredRequests.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+      
+      const tableBody = $('#history-table-body');
+      tableBody.innerHTML = '';
+      if (filteredRequests.length === 0) {
+        $('#history-no-data').style.display = 'block';
+        tableBody.style.display = 'none';
+        return;
+      }
+      $('#history-no-data').style.display = 'none';
+      tableBody.style.display = '';
+      
+      filteredRequests.forEach(req => {
+        const canUserEdit = STATE.loggedInUser.role === 'user' && req.Status === 'รอดำเนินการ';
+        const canPrivilegedEdit = STATE.isPrivilegedUser;
+        const canSuperDelete = STATE.isSuperAdmin;
+        const row = `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(req.RequestDate)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${req.ProductName}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 manager-plus-item-cell" style="display: ${STATE.isPrivilegedUser ? 'table-cell' : 'none'}">${req.Department}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${req.ProductCode || 'N/A'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">${getStatusBadge(req.Status)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex items-center justify-center space-x-3">
+                <button class="text-cyan-600 hover:text-cyan-900 flex items-center justify-center w-8 h-8 rounded-md hover:bg-cyan-50 transition" title="ดูรายละเอียด" data-action="view" data-request-id="${req.RequestID}">
+                  <i data-feather="eye" class="w-4 h-4 btn-icon-no-pointer"></i>
+                </button>
+                ${(canPrivilegedEdit || canUserEdit) ? `
+                <button class="text-blue-600 hover:text-blue-900 flex items-center justify-center w-8 h-8 rounded-md hover:bg-blue-50 transition" title="แก้ไข" data-action="edit" data-request-id="${req.RequestID}">
+                  <i data-feather="edit-2" class="w-4 h-4 btn-icon-no-pointer"></i>
+                </button>` : ''}
+                ${(canSuperDelete) ? `
+                <button class="text-red-600 hover:text-red-900 flex items-center justify-center w-8 h-8 rounded-md hover:bg-red-50 transition" title="ลบ" data-action="delete" data-request-id="${req.RequestID}">
+                  <i data-feather="trash-2" class="w-4 h-4 btn-icon-no-pointer"></i>
+                </button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      });
+      feather.replace();
+    }
+
+    function renderSettingsPage() {
+      // 1. Render User List
+      const userTableBody = $('#settings-user-table-body');
+      userTableBody.innerHTML = '';
+      (STATE.users || []).forEach(user => {
+        const row = `
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 text-sm text-gray-900">${user.username}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${user.role}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${user.department}</td>
+            <td class="px-4 py-3 text-sm">
+              <div class="flex items-center space-x-3">
+                <button class="text-blue-600 hover:text-blue-900" title="แก้ไข" data-action="edit-user" data-username="${user.username}">
+                  <i data-feather="edit-2" class="w-4 h-4 btn-icon-no-pointer"></i>
+                </button>
+                ${user.username !== 'admin' ?
+                `<button class="text-red-600 hover:text-red-900" title="ลบ" data-action="delete-user" data-username="${user.username}">
+                    <i data-feather="trash-2" class="w-4 h-4 btn-icon-no-pointer"></i>
+                  </button>` : ''
+                }
+              </div>
+            </td>
+          </tr>
+        `;
+        userTableBody.innerHTML += row;
+      });
+
+      // 2. Render Unit List
+      const unitList = $('#settings-unit-list');
+      unitList.innerHTML = '';
+      (STATE.settings.units || []).forEach(unit => {
+        unitList.innerHTML += `
+          <li class="flex justify-between items-center bg-gray-50 p-2 rounded-md">
+            <span class="text-sm">${unit}</span>
+            <button class="text-red-500 hover:text-red-700" data-action="delete-setting" data-type="units" data-value="${unit}">
+              <i data-feather="x" class="w-4 h-4 btn-icon-no-pointer"></i>
+            </button>
+          </li>
+        `;
+      });
+
+      // (เพิ่ม) 3. Render Product Type List
+      const productTypeList = $('#settings-product-type-list');
+      productTypeList.innerHTML = '';
+      (STATE.settings.productTypes || []).forEach(type => {
+        productTypeList.innerHTML += `
+          <li class="flex justify-between items-center bg-gray-50 p-2 rounded-md">
+            <span class="text-sm">${type}</span>
+            <button class="text-red-500 hover:text-red-700" data-action="delete-setting" data-type="productTypes" data-value="${type}">
+              <i data-feather="x" class="w-4 h-4 btn-icon-no-pointer"></i>
+            </button>
+          </li>
+        `;
+      });
+
+      // 4. Render Status List
+      const statusList = $('#settings-status-list');
+      statusList.innerHTML = '';
+      (STATE.settings.statuses || []).forEach(status => {
+        statusList.innerHTML += `
+          <li class="flex justify-between items-center bg-gray-50 p-2 rounded-md">
+            <span class="text-sm">${status}</span>
+            <button class="text-red-500 hover:text-red-700" data-action="delete-setting" data-type="statuses" data-value="${status}">
+              <i data-feather="x" class="w-4 h-4 btn-icon-no-pointer"></i>
+            </button>
+          </li>
+        `;
+      });
+
+      feather.replace();
+    }
+
+    // ------------------------------------
+    // (7) Request Form Logic
+    // ------------------------------------
+    async function handleSubmitRequest(e) {
+      e.preventDefault();
+      const form = $('#request-form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      showLoading('กำลังบันทึกคำขอ...');
+      const formData = {
+        requestDate: $('#req-date').value,
+        productName: $('#req-product-name').value,
+        productType: $('#req-product-type').value, // (แก้) อ่านจาก select
+        unit: $('#req-unit').value,
+        requesterName: $('#req-requester-name').value,
+        position: $('#req-position').value,
+      };
+      const imageFile = $('#req-image').files[0];
+      let fileData = null;
+      if (imageFile) {
+        try {
+          if (imageFile.size > 5 * 1024 * 1024) {
+            hideLoading();
+            showError('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB');
+            return;
+          }
+          const fileBase64 = await fileToBase64(imageFile);
+          fileData = {
+            fileName: imageFile.name,
+            mimeType: imageFile.type,
+            base64: fileBase64
+          };
+        } catch (err) {
+          hideLoading();
+          showError('ไม่สามารถอ่านไฟล์ได้: ' + err.message);
+          return;
+        }
+      }
+      google.script.run
+        .withSuccessHandler(onSubmitRequestSuccess)
+        .withFailureHandler(handleGASFailure)
+        .submitRequest(formData, fileData, STATE.loggedInUser);
+    }
+    function onSubmitRequestSuccess(response) {
+      if (response.success && response.newRequest) {
+        hideLoading();
+        if (STATE.isPrivilegedUser) STATE.requests.push(response.newRequest);
+        else STATE.requests.unshift(response.newRequest);
+        
+        $('#request-form').reset();
+        $('#req-image').value = null;
+        $('#req-image-preview').classList.add('hidden');
+        $('#file-name-display').textContent = 'No file chosen';
+        $('#req-department').value = STATE.loggedInUser.department;
+        $('#req-date').value = formatDate(new Date());
+        
+        // (แก้) ต้อง populate dropdown ใหม่หลัง reset
+        initializeAppUI(); 
+
+        Swal.fire({
+          icon: 'success',
+          title: 'บันทึกสำเร็จ!',
+          text: 'คำขอของคุณถูกส่งเข้าระบบแล้ว',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true
+        });
+        navigateTo('history');
+      } else {
+        handleGASFailure(response.message || 'เกิดข้อผิดพลาด: ไม่ได้รับข้อมูลใหม่กลับมา');
+      }
+    }
+    function onDataRefreshed(response) {
+      if (response.success) {
+        STATE.requests = response.requests || [];
+        if(response.users) STATE.users = response.users;
+        if(response.settings) STATE.settings = response.settings;
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    $$('.post-submit-nav-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        navigateTo(e.currentTarget.dataset.page);
+      });
+    });
+
+    // ------------------------------------
+    // (8) Request Modal Logic (View/Edit)
+    // ------------------------------------
+    function openRequestModal(requestId, mode = 'view') {
+      const request = (STATE.requests || []).find(r => r.RequestID === requestId);
+      if (!request) {
+        showError('ไม่พบข้อมูลคำขอ');
+        return;
+      }
+      STATE.currentModalRequest = request;
+      const canUserEdit = (STATE.loggedInUser.role === 'user' && request.Status === 'รอดำเนินการ');
+      const isPrivileged = STATE.isPrivilegedUser;
+      const isEditable = (mode === 'edit') && (isPrivileged || canUserEdit);
+
+      // Populate Units
+      const modalUnit = $('#modal-unit');
+      modalUnit.innerHTML = '';
+      (STATE.settings.units || []).forEach(unit => {
+        modalUnit.innerHTML += `<option value="${unit}">${unit}</option>`;
+      });
+
+      // Populate Statuses
+      const modalStatus = $('#modal-status');
+      modalStatus.innerHTML = '';
+      (STATE.settings.statuses || []).forEach(status => {
+        modalStatus.innerHTML += `<option value="${status}">${status}</option>`;
+      });
+
+      // (เพิ่ม) Populate Product Types
+      const modalType = $('#modal-product-type');
+      modalType.innerHTML = '';
+      (STATE.settings.productTypes || []).forEach(type => {
+        modalType.innerHTML += `<option value="${type}">${type}</option>`;
+      });
+
+      // Populate Form Fields
+      $('#modal-request-id').value = request.RequestID;
+      $('#modal-date').value = formatDate(request.RequestDate);
+      $('#modal-department').value = request.Department;
+      $('#modal-product-name').value = request.ProductName;
+      $('#modal-product-type').value = request.ProductType; // (แก้) ตั้งค่า select
+      $('#modal-unit').value = request.Unit;
+      $('#modal-requester-name').value = request.RequesterName;
+      $('#modal-position').value = request.Position;
+      $('#modal-product-code').value = request.ProductCode || 'รอดำเนินการ';
+      $('#modal-status').value = request.Status;
+      $('#modal-admin-notes').value = request.AdminNotes || '';
+      $('#detail-request-id').textContent = request.RequestID;
+      $('#detail-created-by').textContent = request.CreatedBy || 'N/A';
+      $('#detail-timestamp').textContent = formatDateTime(request.Timestamp);
+      $('#detail-status-timestamp').textContent = formatDateTime(request.StatusUpdateTimestamp);
+
+      // Set UI based on Mode
+      $$('.modal-field').forEach(field => {
+        field.disabled = !isEditable;
+        field.readOnly = !isEditable;
+        field.classList.toggle('bg-gray-100', !isEditable);
+      });
+      $$('.admin-field').forEach(field => {
+        field.disabled = !isPrivileged || !isEditable;
+        field.readOnly = !isPrivileged || !isEditable;
+        field.classList.toggle('bg-gray-100', !isPrivileged || !isEditable);
+      });
+      $$('.manager-plus-item').forEach(el => { el.style.display = isPrivileged ? '' : 'none'; });
+      $('#modal-save-button').style.display = isEditable ? 'inline-flex' : 'none';
+      const uploadContainer = $('#modal-image-upload-container');
+      if (isEditable) {
+        uploadContainer.classList.remove('hidden');
+      } else {
+        uploadContainer.classList.add('hidden');
+      }
+      $('#modal-image-upload-container').style.display = isEditable ? '' : 'none'; // (แก้)
+
+      // Reset upload
+      $('#modal-image-upload').value = null;
+      $('#modal-file-name-display').textContent = 'No new file chosen';
+      $('#modal-image-upload-preview').classList.add('hidden');
+      $('#modal-image-upload-preview').src = '#';
+      
+      // Show existing image
+      const imgContainer = $('#modal-image-container');
+      const imgPreview = $('#modal-image-preview');
+      const imgLink = $('#modal-image-link');
+      const imgLinkText = $('#modal-image-link-text');
+      if (request.ImageURL && request.ImageURL.trim() !== '') {
+        const originalUrl = request.ImageURL;
+        const fileId = getDriveIdFromUrl(originalUrl);
+        if (fileId) {
+          const thumbnailUrl = "https://drive.google.com/thumbnail?id=" + fileId;
+          imgPreview.src = thumbnailUrl;
+          imgLink.href = originalUrl;
+          imgLinkText.href = originalUrl;
+          imgContainer.classList.remove('hidden');
+        } else {
+          console.warn('ไม่สามารถดึง File ID จาก URL:', originalUrl);
+          imgContainer.classList.add('hidden');
+        }
+      } else {
+        imgContainer.classList.add('hidden');
+        imgPreview.src = '#';
+        imgLink.href = '#';
+        imgLinkText.href = '#';
+      }
+      MODALS.request.style.display = 'flex';
+      feather.replace();
+    }
+    function closeRequestModal() {
+      MODALS.request.style.display = 'none';
+      STATE.currentModalRequest = null;
+      $('#modal-form').reset();
+      $('#modal-image-container').classList.add('hidden');
+      $('#modal-image-preview').src = '#';
+      $('#modal-image-link').href = '#';
+      $('#modal-image-link-text').href = '#';
+      $('#modal-image-upload').value = null;
+      $('#modal-file-name-display').textContent = 'No new file chosen';
+      $('#modal-image-upload-preview').classList.add('hidden');
+      $('#modal-image-upload-preview').src = '#';
+    }
+    async function handleModalSave(e) {
+      e.preventDefault();
+      const requestId = $('#modal-request-id').value;
+      let updatedData = {
+        RequestDate: $('#modal-date').value,
+        ProductName: $('#modal-product-name').value,
+        ProductType: $('#modal-product-type').value, // (แก้) อ่านจาก select
+        Unit: $('#modal-unit').value,
+        RequesterName: $('#modal-requester-name').value,
+        Position: $('#modal-position').value,
+      };
+      if (STATE.isPrivilegedUser) {
+        updatedData.ProductCode = $('#modal-product-code').value;
+        updatedData.Status = $('#modal-status').value;
+        updatedData.AdminNotes = $('#modal-admin-notes').value;
+      }
+      const imageFile = $('#modal-image-upload').files[0];
+      let newFileData = null;
+      if (imageFile) {
+        showLoading('กำลังแปลงไฟล์รูปภาพ...');
+        try {
+          if (imageFile.size > 5 * 1024 * 1024) {
+            hideLoading();
+            showError('ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB');
+            return;
+          }
+          const fileBase64 = await fileToBase64(imageFile);
+          newFileData = {
+            fileName: imageFile.name,
+            mimeType: imageFile.type,
+            base64: fileBase64
+          };
+        } catch (err) {
+          hideLoading();
+          showError('ไม่สามารถอ่านไฟล์ใหม่ได้: ' + err.message);
+          return;
+        }
+      }
+      showLoading('กำลังอัปเดตคำขอ...');
+      google.script.run
+        .withSuccessHandler(onUpdateRequestSuccess)
+        .withFailureHandler(handleGASFailure)
+        .updateRequest(requestId, updatedData, newFileData, STATE.loggedInUser);
+    }
+    function onUpdateRequestSuccess(response) {
+      if (response.success) {
+        closeRequestModal();
+        showSuccess(response.message || 'อัปเดตสำเร็จ');
+        google.script.run
+          .withSuccessHandler((data) => {
+            onDataRefreshed(data);
+            renderHistoryPage();
+          })
+          .withFailureHandler(handleGASFailure)
+          .getInitialData(STATE.loggedInUser);
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    function handleDeleteRequest(requestId) {
+      const request = (STATE.requests || []).find(r => r.RequestID === requestId);
+      const requestName = request ? request.ProductName : 'คำขอนี้';
+      Swal.fire({
+        title: `ยืนยันการลบ?`,
+        text: `คุณต้องการลบคำขอ "${requestName}" (ID: ${requestId}) ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoading('กำลังลบคำขอ...');
+          google.script.run
+            .withSuccessHandler(onDeleteRequestSuccess)
+            .withFailureHandler(handleGASFailure)
+            .deleteRequest(requestId, STATE.loggedInUser);
+        }
+      });
+    }
+    function onDeleteRequestSuccess(response) {
+      if (response.success) {
+        showSuccess(response.message || 'ลบคำขอสำเร็จ');
+        google.script.run
+          .withSuccessHandler((data) => {
+            onDataRefreshed(data);
+            renderHistoryPage();
+          })
+          .withFailureHandler(handleGASFailure)
+          .getInitialData(STATE.loggedInUser);
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    
+    // ------------------------------------
+    // (9) Settings Page Logic (Admin)
+    // ------------------------------------
+    function handleAddUser(e) {
+      e.preventDefault();
+      const userData = {
+        username: $('#new-user-username').value.trim(),
+        password: $('#new-user-password').value.trim(),
+        role: $('#new-user-role').value,
+        department: $('#new-user-dept').value.trim(),
+      };
+      if (!userData.username || !userData.password || !userData.department) {
+        showError('กรุณากรอกข้อมูลผู้ใช้ให้ครบถ้วน');
+        return;
+      }
+      showLoading('กำลังเพิ่มผู้ใช้...');
+      google.script.run
+        .withSuccessHandler(onManageUserSuccess)
+        .withFailureHandler(handleGASFailure)
+        .manageUser('add', userData, STATE.loggedInUser);
+    }
+    function handleDeleteUser(username) {
+      Swal.fire({
+        title: `ยืนยันการลบ ${username}?`,
+        text: "การกระทำนี้ไม่สามารถย้อนกลับได้!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoading('กำลังลบผู้ใช้...');
+          google.script.run
+            .withSuccessHandler(onManageUserSuccess)
+            .withFailureHandler(handleGASFailure)
+            .manageUser('delete', { username: username }, STATE.loggedInUser);
+        }
+      });
+    }
+    function onManageUserSuccess(response) {
+      if (response.success) {
+        hideLoading();
+        showSuccess(response.message || 'จัดการผู้ใช้สำเร็จ');
+        STATE.users = response.users || [];
+        renderSettingsPage();
+        $('#add-user-form').reset();
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    function openUserEditModal(username) {
+      const user = (STATE.users || []).find(u => u.username === username);
+      if (!user) {
+        showError('ไม่พบข้อมูลผู้ใช้');
+        return;
+      }
+      $('#edit-user-original-username').value = user.username;
+      $('#edit-user-username').value = user.username;
+      $('#edit-user-role').value = user.role;
+      $('#edit-user-dept').value = user.department;
+      $('#edit-user-password').value = '';
+      MODALS.userEdit.style.display = 'flex';
+      feather.replace();
+    }
+    function closeUserEditModal() {
+      MODALS.userEdit.style.display = 'none';
+      $('#user-edit-form').reset();
+    }
+    function handleUserEditSave(e) {
+      e.preventDefault();
+      const originalUsername = $('#edit-user-original-username').value;
+      const newUserData = {
+        username: $('#edit-user-username').value.trim(),
+        password: $('#edit-user-password').value.trim(),
+        role: $('#edit-user-role').value,
+        department: $('#edit-user-dept').value.trim()
+      };
+      if (!newUserData.username || !newUserData.department) {
+        showError('กรุณากรอก Username และ Department');
+        return;
+      }
+      if (originalUsername === 'admin' && newUserData.role !== 'admin') {
+        showError('ไม่สามารถเปลี่ยน Role ของ "admin" ได้');
+        return;
+      }
+      showLoading('กำลังอัปเดตผู้ใช้...');
+      google.script.run
+        .withSuccessHandler(onUpdateUserSuccess)
+        .withFailureHandler(handleGASFailure)
+        .updateUser(originalUsername, newUserData, STATE.loggedInUser);
+    }
+    function onUpdateUserSuccess(response) {
+      if (response.success) {
+        closeUserEditModal();
+        hideLoading();
+        showSuccess(response.message || 'อัปเดตผู้ใช้สำเร็จ');
+        STATE.users = response.users || [];
+        renderSettingsPage();
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    function handleManageSetting(settingType, action, value) {
+      showLoading('กำลังอัปเดตการตั้งค่า...');
+      google.script.run
+        .withSuccessHandler(onManageSettingSuccess)
+        .withFailureHandler(handleGASFailure)
+        .manageSettings(settingType, action, value, STATE.loggedInUser);
+    }
+    function onManageSettingSuccess(response) {
+      if (response.success) {
+        hideLoading();
+        showSuccess(response.message || 'อัปเดตการตั้งค่าสำเร็จ');
+        STATE.settings = response.settings || { units: [], statuses: [], productTypes: [] };
+        initializeAppUI();
+        renderSettingsPage();
+      } else {
+        handleGASFailure(response);
+      }
+    }
+    function resumeSession() {
+      const savedUser = sessionStorage.getItem('pyh_current_user');
+      const lastPage = sessionStorage.getItem('pyh_last_page');
+      if (savedUser) {
+        try {
+          STATE.loggedInUser = JSON.parse(savedUser);
+          STATE.isSuperAdmin = STATE.loggedInUser.role === 'admin';
+          STATE.isPrivilegedUser = (STATE.loggedInUser.role === 'admin' || STATE.loggedInUser.role === 'manager');
+          const defaultPage = (STATE.isPrivilegedUser) ? 'history' : 'home';
+          navigateTo(lastPage || defaultPage);
+          showLoading('กำลังรีเฟรชข้อมูล...');
+          google.script.run
+            .withSuccessHandler(response => onGetInitialDataSuccess(response, 'resume'))
+            .withFailureHandler((err) => {
+              hideLoading();
+              Swal.fire({
+                title: 'เซสชันหมดอายุ',
+                text: 'ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบใหม่อีกครั้ง',
+                icon: 'error',
+                confirmButtonText: 'ตกลง'
+              }).then(() => { handleLogout(); });
+            })
+            .getInitialData(STATE.loggedInUser);
+        } catch (e) { handleLogout(); }
+      } else { navigateTo('login'); }
+    }
+
+    // ------------------------------------
+    // (10) Event Listeners (ฉบับสมบูรณ์)
+    // ------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- Login ---
+      $('#login-form').addEventListener('submit', handleLogin);
+      $('#logout-button').addEventListener('click', handleLogout);
+
+      // --- Navigation ---
+      $$('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          navigateTo(e.currentTarget.dataset.page); // (แก้)
+        });
+      });
+
+      // --- Request Form (หน้าหลัก) ---
+      $('#request-form').addEventListener('submit', handleSubmitRequest);
+
+      // (หน้าหลัก) แสดงภาพตัวอย่าง
+      $('#req-image').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const preview = $('#req-image-preview');
+        const fileNameDisplay = $('#file-name-display');
+        if (file) {
+          fileNameDisplay.textContent = file.name;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            preview.src = event.target.result;
+            preview.classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        } else {
+          fileNameDisplay.textContent = 'No file chosen';
+          preview.src = '#';
+          preview.classList.add('hidden');
+        }
+      });
+
+      // --- History Filters ---
+      $('#filter-dept').addEventListener('change', renderHistoryPage);
+      $('#filter-status').addEventListener('change', renderHistoryPage);
+      $('#filter-date-start').addEventListener('change', renderHistoryPage);
+      $('#filter-date-end').addEventListener('change', renderHistoryPage);
+      $('#filter-search').addEventListener('input', renderHistoryPage);
+      $('#filter-search-code').addEventListener('input', renderHistoryPage);
+
+      // (แก้ไข) Event Delegation สำหรับตาราง History
+      $('#history-table-body').addEventListener('click', (e) => {
+        const targetButton = e.target.closest('button[data-action]');
+        if (!targetButton) return;
+        const { action, requestId } = targetButton.dataset;
+        if (action === 'view' || action === 'edit') openRequestModal(requestId, action);
+        else if (action === 'delete') handleDeleteRequest(requestId);
+      });
+
+      // --- Modal (Request) ---
+      $('#modal-form').addEventListener('submit', handleModalSave);
+      $('#modal-close-button').addEventListener('click', closeRequestModal);
+      $$('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeRequestModal));
+
+      // (Modal) แสดงภาพตัวอย่าง (สำหรับอัปโหลดใหม่)
+      $('#modal-image-upload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const preview = $('#modal-image-upload-preview');
+        const fileNameDisplay = $('#modal-file-name-display');
+        if (file) {
+          fileNameDisplay.textContent = file.name;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            preview.src = event.target.result;
+            preview.classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        } else {
+          fileNameDisplay.textContent = 'No new file chosen';
+          preview.src = '#';
+          preview.classList.add('hidden');
+        }
+      });
+
+      // --- Modal (User Edit) ---
+      $('#user-edit-form').addEventListener('submit', handleUserEditSave);
+      $('#user-edit-modal-close').addEventListener('click', closeUserEditModal);
+      $$('.user-edit-modal-close').forEach(btn => btn.addEventListener('click', closeUserEditModal));
+
+      // --- Settings ---
+      $('#add-user-form').addEventListener('submit', handleAddUser);
+
+      // (Settings) เพิ่ม Unit
+      $('#setting-unit-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const value = $('#new-unit-value').value.trim();
+        if (value) {
+          handleManageSetting('units', 'add', value);
+          $('#new-unit-value').value = '';
+        }
+      });
+
+      // (เพิ่มใหม่) (Settings) เพิ่ม Product Type
+      $('#setting-product-type-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const value = $('#new-product-type-value').value.trim();
+        if (value) {
+          handleManageSetting('productTypes', 'add', value); // (แก้)
+          $('#new-product-type-value').value = '';
+        }
+      });
+
+      // (Settings) เพิ่ม Status
+      $('#setting-status-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const value = $('#new-status-value').value.trim();
+        if (value) {
+          handleManageSetting('statuses', 'add', value);
+          $('#new-status-value').value = '';
+        }
+      });
+
+      // (แก้ไข) Event Delegation สำหรับหน้า Settings ทั้งหมด
+      $('#app-page-settings').addEventListener('click', (e) => {
+        const targetButton = e.target.closest('button[data-action]');
+        if (!targetButton) return;
+        const { action, username, type, value } = targetButton.dataset;
+        if (action === 'edit-user') openUserEditModal(username);
+        else if (action === 'delete-user') handleDeleteUser(username);
+        else if (action === 'delete-setting') handleManageSetting(type, 'delete', value);
+      });
+
+      // --- Initial Page Load ---
+      resumeSession();
+      feather.replace();
+    });
+  </script>
+
+</body>
+</html>
